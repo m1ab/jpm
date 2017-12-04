@@ -6,6 +6,7 @@ project_name=$2
 projects_dir=~/src
 modules="api jpa web ejb rest static war app"
 snapshot_version=0.1-SNAPSHOT
+author=misha
 
 
 cross_module_dependencies_ejb="api jpa"
@@ -407,6 +408,31 @@ EOF
 
 
 
+makeBeansXmlFile() {
+cat > $1 << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+        xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                      http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd"
+        bean-discovery-mode="all">
+</beans>
+EOF
+}
+
+makePackageInfoFile() {
+cat > $1 << EOF
+/**
+ * Package $2.$3
+ *
+ * Created by ${author} on $(date '+%d.%m.%Y').
+ */
+package $2.$3;
+EOF
+}
+
+
 printHelp() {
 cat << EOF
     Usage: jpm.sh <group-name> <project-name>
@@ -563,8 +589,6 @@ createTreeStructure() {
     for module in ${modules}; do createTreeModule $1 $2 ${module}; done;
     makeRootPomFile ${projects_dir}/$2/pom.xml $1 $2 parent
 }
-
-
 
 if [ -z "$group_name" ]
   then
