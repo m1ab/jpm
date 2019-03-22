@@ -1,13 +1,21 @@
 #!/bin/bash
 
+###############################################################################
+# JPM (Java Project with Maven) - Custom tool, alternative for maven archetype
+# Version 1.0
+#
+# Start Your New Java Project Fast!
+#
+# Use example.sh to test
+#
+
 group_name=$1
 project_name=$2
 
-projects_dir=~/src
+src_dir=~/src
 modules="api jpa web ejb rest static war app"
 snapshot_version=0.1-SNAPSHOT
-author=misha
-
+author="Your Name"
 
 cross_module_dependencies_ejb="api jpa"
 cross_module_dependencies_rest="api ejb jpa"
@@ -15,9 +23,134 @@ cross_module_dependencies_war="api ejb jpa"
 cross_module_dependencies_web="api"
 cross_module_dependencies_app="api jpa web ejb rest static war"
 
-makeRootPomFile() {
-
+makeBeansXmlFile() {
 cat > $1 << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:s="urn:java:ee"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://docs.jboss.org/cdi/beans_1_0.xsd">
+</beans>
+EOF
+}
+
+makePackageInfoFile() {
+cat > $1 << EOF
+/**
+ * Package $2.$3
+ *
+ * Created by ${author} on $(date '+%d.%m.%Y').
+ */
+package $2.$3;
+EOF
+}
+
+makePersistenceXmlFile() {
+    cat > $1 << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
+             version="2.1">
+    <persistence-unit name="$3PU" transaction-type="JTA">
+        <provider>org.hibernate.ejb.HibernatePersistence</provider>
+        <jta-data-source>java:jboss/datasources/$3DS</jta-data-source>
+
+        <!-- Put your classes here -->
+        <!--<class>$2.jpa.Example</class>-->
+
+        <exclude-unlisted-classes/>
+
+        <properties>
+            <property name="hibernate.generate_statistics" value="false"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="false"/>
+            <property name="use_sql_comments" value="false"/>
+            <property name="org.hibernate.envers.store_data_at_delete" value="true"/>
+            <property name="hibernate.listeners.envers.autoRegister" value="false"/>
+            <!-- <property name="hibernate.dialect" value="$2.api.dialect.PostgresqlExtensionsDialect"/> -->
+        </properties>
+    </persistence-unit>
+
+</persistence>
+
+EOF
+}
+
+makeCssFile() {
+    cat > $1 << EOF
+html {
+    position: relative;
+    min-height: 100%;
+}
+EOF
+}
+
+makeJsFile() {
+    cat > $1 << EOF
+//js
+EOF
+}
+
+makeTestHtmlFile() {
+    cat > $1 << EOF
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>$2</title>
+</head>
+<body>
+
+<a href='http://mizhgan.com' style='text-decoration: none; color: #555'>
+<pre>
+ \\\\\¡¡
+[(°¿°)] MIZHGAN.COM
+</pre></a>
+<hr>
+
+<p>Hey, do you like <code>jpm.sh</code></p>
+<hr>
+
+</body>
+</html>
+EOF
+}
+
+makeWebXmlFile() {
+    cat > $1 << EOF
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+		 http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+</web-app>
+EOF
+}
+
+makeJbossWebXmlFile() {
+    cat > $1 << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-web>
+    <virtual-host>default-host</virtual-host>
+</jboss-web>
+EOF
+}
+
+makeDependencyXml() {
+    cat >> $1 << EOF
+        <dependency>
+            <groupId>$2</groupId>
+            <artifactId>$3-$4</artifactId>
+            <version>${snapshot_version}</version>
+            $5
+        </dependency>
+EOF
+}
+
+makeRootPomFile() {
+    cat > $1 << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -102,12 +235,12 @@ EOF
 
 for module in ${modules}
 do
-cat >> $1 << EOF
+    cat >> $1 << EOF
                 <module>$3-${module}</module>
 EOF
 done;
 
-cat >> $1 << EOF
+    cat >> $1 << EOF
             </modules>
         </profile>
     </profiles>
@@ -213,39 +346,17 @@ cat >> $1 << EOF
 EOF
 }
 
-makeAppProfiles() {
-cat >> $1 << EOF
+makeAppProfilesBegin() {
+    cat >> $1 << EOF
     <profiles>
         <profile>
             <id>total</id>
             <dependencies>
 EOF
+}
 
-if [ ! -z "$5" ]
-then
-
-for dependency in $5
-do
-
-dependencyType="jar"
-if [ "${dependency}" == "ejb" ]; then dependencyType="ejb"; fi
-if [ "${dependency}" == "war" ]; then dependencyType="war"; fi
-if [ "${dependency}" == "rest" ]; then dependencyType="war"; fi
-if [ "${dependency}" == "static" ]; then dependencyType="war"; fi
-
-cat >> $1 << EOF
-                <dependency>
-                    <groupId>$2</groupId>
-                    <artifactId>$3-${dependency}</artifactId>
-                    <version>${snapshot_version}</version>
-                    <type>${dependencyType}</type>
-                </dependency>
-EOF
-done;
-
-fi;
-
-cat >> $1 << EOF
+makeAppProfilesEarBegin() {
+    cat >> $1 << EOF
             </dependencies>
             <build>
                 <plugins>
@@ -261,40 +372,9 @@ cat >> $1 << EOF
                             <packagingExcludes />
                             <modules>
 EOF
+}
 
-if [ ! -z "$5" ]
-then
-
-for dependency in $5
-do
-
-moduleType="jarModule"
-contextRoot=""
-if [ "${dependency}" == "ejb" ]; then moduleType="ejbModule"; fi
-if [ "${dependency}" == "war" ]; then moduleType="webModule"; contextRoot="/"; fi
-if [ "${dependency}" == "rest" ]; then moduleType="webModule"; contextRoot="/api"; fi
-if [ "${dependency}" == "static" ]; then moduleType="webModule"; contextRoot="/data"; fi
-
-cat >> $1 << EOF
-                                <${moduleType}>
-                                    <groupId>$2</groupId>
-                                    <artifactId>$3-${dependency}</artifactId>
-EOF
-
-if [ ! -z "${contextRoot}" ]
-then
-cat >> $1 << EOF
-                                    <contextRoot>${contextRoot}</contextRoot>
-EOF
-fi
-
-cat >> $1 << EOF
-                                </${moduleType}>
-EOF
-done;
-
-fi;
-
+makeAppProfilesEnd() {
 cat >> $1 << EOF
                             </modules>
                         </configuration>
@@ -351,17 +431,60 @@ cat >> $1 << EOF
 EOF
 }
 
-makeModulePomFile() {
-dependencies=""
-packaging="jar"
-if [ "$4" == "ejb" ]; then dependencies=${cross_module_dependencies_ejb}; packaging="ejb"; fi
-if [ "$4" == "rest" ]; then dependencies=${cross_module_dependencies_rest}; packaging="war"; fi
-if [ "$4" == "static" ]; then packaging="war"; fi
-if [ "$4" == "war" ]; then dependencies=${cross_module_dependencies_war}; packaging="war"; fi
-if [ "$4" == "web" ]; then dependencies=${cross_module_dependencies_web}; fi
-if [ "$4" == "app" ]; then dependencies=${cross_module_dependencies_app}; packaging="ear"; fi
+makeAppProfiles() {
+    makeAppProfilesBegin $1
+    if [ ! -z "$5" ]
+    then
+        for dependency in $5
+        do
+            dependencyType="jar"
+            if [ "${dependency}" == "ejb" ]; then dependencyType="ejb"; fi
+            if [ "${dependency}" == "war" ]; then dependencyType="war"; fi
+            if [ "${dependency}" == "rest" ]; then dependencyType="war"; fi
+            if [ "${dependency}" == "static" ]; then dependencyType="war"; fi
+            makeDependencyXml $1 $2 $3 ${dependency} "<type>${dependencyType}</type>"
+        done;
+    fi;
+    makeAppProfilesEarBegin $1 $2 $3 $4
+    if [ ! -z "$5" ]
+    then
+        for dependency in $5
+        do
+            moduleType="jarModule"
+            contextRoot=""
+            if [ "${dependency}" == "ejb" ]; then moduleType="ejbModule"; fi
+            if [ "${dependency}" == "war" ]; then moduleType="webModule"; contextRoot="/"; fi
+            if [ "${dependency}" == "rest" ]; then moduleType="webModule"; contextRoot="/api"; fi
+            if [ "${dependency}" == "static" ]; then moduleType="webModule"; contextRoot="/data"; fi
+            cat >> $1 << EOF
+                                <${moduleType}>
+                                    <groupId>$2</groupId>
+                                    <artifactId>$3-${dependency}</artifactId>
+EOF
+            if [ ! -z "${contextRoot}" ]
+            then
+                cat >> $1 << EOF
+                                    <contextRoot>${contextRoot}</contextRoot>
+EOF
+            fi
+            cat >> $1 << EOF
+                                </${moduleType}>
+EOF
+        done;
+    fi;
+    makeAppProfilesEnd $1
+}
 
-cat > $1 << EOF
+makeModulePomFile() {
+    dependencies=""
+    packaging="jar"
+    if [ "$4" == "ejb" ]; then dependencies=${cross_module_dependencies_ejb}; packaging="ejb"; fi
+    if [ "$4" == "rest" ]; then dependencies=${cross_module_dependencies_rest}; packaging="war"; fi
+    if [ "$4" == "static" ]; then packaging="war"; fi
+    if [ "$4" == "war" ]; then dependencies=${cross_module_dependencies_war}; packaging="war"; fi
+    if [ "$4" == "web" ]; then dependencies=${cross_module_dependencies_web}; fi
+    if [ "$4" == "app" ]; then dependencies=${cross_module_dependencies_app}; packaging="ear"; fi
+    cat > $1 << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -377,58 +500,24 @@ cat > $1 << EOF
     <name>${3^} ${4^} Module</name>
 
 EOF
+    if [ "$4" == "app" ]
+    then
+        makeAppProfiles $1 $2 $3 $4 "${dependencies}"
+    else
+        if [ ! -z "${dependencies}" ]
+        then
+            echo "    <dependencies>" >> $1
+            for dependency in ${dependencies}
+            do
+                makeDependencyXml $1 $2 $3 ${dependency} "<scope>provided</scope>"
+            done;
+            echo "    </dependencies>" >> $1
+        fi
+    fi
 
-if [ "$4" == "app" ]
-then
-    makeAppProfiles $1 $2 $3 $4 "${dependencies}"
-else
-if [ ! -z "${dependencies}" ]
-then
-echo "    <dependencies>" >> $1
-for dependency in ${dependencies}
-do
-cat >> $1 << EOF
-        <dependency>
-            <groupId>$2</groupId>
-            <artifactId>$3-${dependency}</artifactId>
-            <version>${snapshot_version}</version>
-            <scope>provided</scope>
-        </dependency>
-EOF
-done;
-echo "    </dependencies>" >> $1
-fi
-fi
-
-cat >> $1 << EOF
+    cat >> $1 << EOF
 
 </project>
-EOF
-}
-
-
-
-makeBeansXmlFile() {
-cat > $1 << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<beans
-        xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
-                      http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd"
-        bean-discovery-mode="all">
-</beans>
-EOF
-}
-
-makePackageInfoFile() {
-cat > $1 << EOF
-/**
- * Package $2.$3
- *
- * Created by ${author} on $(date '+%d.%m.%Y').
- */
-package $2.$3;
 EOF
 }
 
@@ -441,153 +530,56 @@ EOF
 }
 
 createTreeModule() {
-module_dir=${projects_dir}/$2/$2-$3
-if [ "$3" == "app" ]
-then
-    the_dir=${module_dir}/src/main/application/META-INF
-    mkdir -p ${the_dir}
-    cat > ${the_dir}/persistence.xml << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
-             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
-             version="2.1">
-    <persistence-unit name="$2PU" transaction-type="JTA">
-        <provider>org.hibernate.ejb.HibernatePersistence</provider>
-        <jta-data-source>java:jboss/datasources/$2DS</jta-data-source>
+module_dir=${src_dir}/$2/$2-$3
+    if [ "$3" == "app" ]
+    then
+        the_dir=${module_dir}/src/main/application/META-INF
+        mkdir -p ${the_dir}
+        makePersistenceXmlFile ${the_dir}/persistence.xml $1 $2
+        the_dir=${module_dir}/src/main/resources/META-INF
+        mkdir -p ${the_dir}
+        makeBeansXmlFile ${the_dir}/beans.xml
+    else
+        if [ "$3" == "static" ]
+        then
+            the_dir=${module_dir}/src/main/webapp
+            mkdir -p ${the_dir}/css
+            makeCssFile ${the_dir}/css/page.css
+            mkdir -p ${the_dir}/js
+            makeJsFile ${the_dir}/js/test.js
+            makeTestHtmlFile ${the_dir}/test.html $2
 
-        <!-- Put your classes here -->
-        <!--<class>$1.jpa.Example</class>-->
+        else
+            package_name=$(echo $1 |sed 's/\./\//g')
+            the_dir=${module_dir}/src/main/java/${package_name}/$3
+            mkdir -p ${the_dir}
+            echo "package $1.$3;" > ${the_dir}/package-info.java
+            the_dir=${module_dir}/src/main/resources/META-INF
+            mkdir -p ${the_dir}
+            makeBeansXmlFile ${the_dir}/beans.xml
+            the_dir=${module_dir}/src/test/java/${package_name}/test/$3
+            mkdir -p ${the_dir}
+            echo "package $1.test.$3;" > ${the_dir}/package-info.java
+            the_dir=${module_dir}/src/test/resources/META-INF
+            mkdir -p ${the_dir}
+            makeBeansXmlFile ${the_dir}/beans.xml
+        fi
+    fi
 
-        <exclude-unlisted-classes/>
-
-        <properties>
-            <property name="hibernate.generate_statistics" value="false"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
-            <property name="hibernate.show_sql" value="false"/>
-            <property name="hibernate.format_sql" value="false"/>
-            <property name="use_sql_comments" value="false"/>
-            <property name="org.hibernate.envers.store_data_at_delete" value="true"/>
-            <property name="hibernate.listeners.envers.autoRegister" value="false"/>
-            <!-- <property name="hibernate.dialect" value="$1.api.dialect.PostgresqlExtensionsDialect"/> -->
-        </properties>
-    </persistence-unit>
-
-</persistence>
-
-EOF
-    the_dir=${module_dir}/src/main/resources/META-INF
-    mkdir -p ${the_dir}
-    cat > ${the_dir}/beans.xml << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://java.sun.com/xml/ns/javaee"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:s="urn:java:ee"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://docs.jboss.org/cdi/beans_1_0.xsd">
-
-</beans>
-EOF
-
-else
-
-if [ "$3" == "static" ]
-then
-    the_dir=${module_dir}/src/main/webapp
-    mkdir -p ${the_dir}/css
-    cat > ${the_dir}/css/page.css << EOF
-html {
-    position: relative;
-    min-height: 100%;
-}
-EOF
-    mkdir -p ${the_dir}/js
-    cat > ${the_dir}/js/test.js << EOF
-//js
-EOF
-    cat > ${the_dir}/test.html << EOF
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<title>$3</title>
-</head>
-<body>
-
-<a href='http://mizhgan.com' style='text-decoration: none; color: #555'>
-<pre>
- \\\\\¡¡
-[(°¿°)] MIZHGAN.COM
-</pre></a>
-<hr>
-
-<p>Hey, do you like <code>jpm.sh</code></p>
-<hr>
-
-</body>
-</html>
-EOF
-
-else
-    package_name=$(echo $1 |sed 's/\./\//g')
-    the_dir=${module_dir}/src/main/java/${package_name}/$3
-    mkdir -p ${the_dir}
-    echo "package $1.$3;" > ${the_dir}/package-info.java
-    the_dir=${module_dir}/src/main/resources/META-INF
-    mkdir -p ${the_dir}
-    cat > ${the_dir}/beans.xml << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://java.sun.com/xml/ns/javaee"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:s="urn:java:ee"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://docs.jboss.org/cdi/beans_1_0.xsd">
-
-</beans>
-EOF
-    the_dir=${module_dir}/src/test/java/${package_name}/test/$3
-    mkdir -p ${the_dir}
-    echo "package $1.test.$3;" > ${the_dir}/package-info.java
-    the_dir=${module_dir}/src/test/resources/META-INF
-    mkdir -p ${the_dir}
-    cat > ${the_dir}/beans.xml << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://java.sun.com/xml/ns/javaee"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:s="urn:java:ee"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://docs.jboss.org/cdi/beans_1_0.xsd">
-
-</beans>
-EOF
-fi
-fi
-
-if [ "$3" == "rest" ] || [ "$3" == "static" ] || [ "$3" == "war" ]
-then
-    the_dir=${module_dir}/src/main/webapp/WEB-INF
-    mkdir -p ${the_dir}
-    cat > ${the_dir}/web.xml << EOF
-<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
-		 http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
-         version="3.1">
-
-</web-app>
-EOF
-    cat > ${the_dir}/jboss-web.xml << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<jboss-web>
-    <virtual-host>default-host</virtual-host>
-</jboss-web>
-EOF
-fi
+    if [ "$3" == "rest" ] || [ "$3" == "static" ] || [ "$3" == "war" ]
+    then
+        the_dir=${module_dir}/src/main/webapp/WEB-INF
+        mkdir -p ${the_dir}
+        makeWebXmlFile ${the_dir}/web.xml
+        makeJbossWebXmlFile ${the_dir}/jboss-web.xml
+    fi
 
     makeModulePomFile ${module_dir}/pom.xml $1 $2 $3
-
 }
 
 createTreeStructure() {
     for module in ${modules}; do createTreeModule $1 $2 ${module}; done;
-    makeRootPomFile ${projects_dir}/$2/pom.xml $1 $2 parent
+    makeRootPomFile ${src_dir}/$2/pom.xml $1 $2 parent
 }
 
 if [ -z "$group_name" ]
@@ -604,7 +596,7 @@ if [ -z "$project_name" ]
     exit;
 fi
 
-project_dir="${projects_dir}/${project_name}"
+project_dir="${src_dir}/${project_name}"
 
 if [ -d "${project_dir}" ]
   then

@@ -1,17 +1,19 @@
 # README #
 
-
+Start Your New Java Project Fast!
 
 ### What is this repository for? ###
 
 * JPM (Java Project with Maven) - Custom tool, alternative for maven archetype
-* Version 0.1
+* Version 1.0
 
 
 ### How do I get set up? ###
 
 > ##### Note! 
-> Be sure you have standart linux bash or sh installed  
+> Be sure you have standard linux bash or sh installed  
+
+If u use Windows just get GitBash
 
 ### Usage ###
 ```{r, engine='bash', count_lines}
@@ -20,10 +22,7 @@
 
 ### Who do I talk to? ###
 
-
-* Feel free to contact:  
-    - __misha__ <m1ab@mail.ru>  
-     _Use to admin the repo._
+* Feel free to contact:  [mizhgan.com!](http://mizhgan.com)
 
 
  
