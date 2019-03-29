@@ -22,7 +22,7 @@ If u use Windows just get GitBash
 
 ### Who do I talk to? ###
 
-* Feel free to contact:  [mizhgan.com!](http://mizhgan.com)
+* Feel free to contact:  [mizhgan.com](http://mizhgan.com)
 
 
  
